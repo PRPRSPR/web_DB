@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.js"
+        integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        #container{
+            width: 600px;
+            margin: 50px auto;
+        }
+        table,
+        tr,
+        th,
+        td {
+            text-align: center;
+            border: 2px solid #bbb;
+            border-collapse: collapse;
+            padding: 10px;
+        }
+
+        th {
+            color: rgb(132, 39, 219);
+            background-color: aliceblue;
+            /* font-size: 30px; */
+            width: 100px;
+        }
+
+        td {
+            width: 500px;
+        }
+
+        #contents{
+            height: 300px;
+        }
+        #title{
+            width: 500px;
+        }
+        button{
+            margin-top: 5px;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="container">
+            <table>
+                <tr>
+                    <th>제목</th>
+                    <td><input id="title" v-model="title"></td>
+                </tr>
+                <tr>
+                    <th>내용</th>
+                    <td id="contents">
+                        <textarea v-model="contents" rows="20" cols="70"></textarea>
+                    </td>
+                </tr>
+            </table>
+            <div>
+                <button @click="fnSave">저장</button>
+                <button @click="fnBackList">되돌아가기</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+<script>
+    const app = Vue.createApp({
+        data() {
+            return {
+                // 변수
+                title:"",
+                contents:"",
+                userId:"user01",
+                // 나중에 로그인 정보를 담아서 작성자 넣어주게됨.
+                // 지금은 하드코딩
+            };
+        },
+        methods: {
+            // 함수(메소드)
+            fnSave : function(){
+                let self = this;
+                let nparmap={
+                    title : self.title,
+                    contents : self.contents,
+                    userId : self.userId,
+                    kind : 1
+                    // 게시판 종류. 아직 관리되지 않음. 하드코딩함.
+                };
+                $.ajax({
+                    url: "http://localhost:3000/insert",  // 서버 주소 수정 (http:// 포함)
+                    dataType: "json",
+                    type: "POST", // GET, POST
+                    data: JSON.stringify(nparmap),   // 서버로 보낼 데이터
+                    contentType: "application/json",
+                    success : function(data){
+                        console.log(data);
+                        alert("작성되었습니다.");
+                        location.href = "board-list.html";
+                    }
+                });
+            },
+            fnBackList:function(){
+                location.href = "board-list.html";
+            }
+        },
+        mounted() {
+            // 처음 시작할 때 실행되는 부분
+        }
+    });
+
+    app.mount('#app');
+</script>

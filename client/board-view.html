@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>연습!!!!!!!!</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.js"
+        integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        #container{
+            width: 600px;
+            margin: 50px auto;
+        }
+        table,
+        tr,
+        th,
+        td {
+            text-align: center;
+            border: 2px solid #bbb;
+            border-collapse: collapse;
+            padding: 5px;
+        }
+
+        th {
+            color: rgb(132, 39, 219);
+            background-color: aliceblue;
+            /* font-size: 30px; */
+        }
+
+        td {
+            width: 500px;
+        }
+
+        #contents{
+            height: 300px;
+        }
+        button{
+            margin-top: 5px;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div id="container">
+            <table>
+                <tr>
+                    <th>제목</th>
+                    <td>{{info.TITLE}}</td>
+                </tr>
+                <tr>
+                    <th>작성자</th>
+                    <td>{{info.USERNAME}}</td>
+                </tr>
+                <tr>
+                    <th>작성일</th>
+                    <td>{{info.CDATETIME}}</td>
+                </tr>
+                <tr>
+                    <th>조회수</th>
+                    <td>{{info.CNT}}</td>
+                </tr>
+                <tr>
+                    <th>내용</th>
+                    <td id="contents">{{info.CONTENTS}}</td>
+                </tr>
+            </table>
+            <div>
+                <button @click="fnRemove(info.BOARDNO)">삭제</button>
+                <button @click="fnBackList">되돌아가기</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
+
+<script>
+    const app = Vue.createApp({
+        data() {
+            return {
+                info: {},
+                boardNo: ""
+            };
+        },
+        methods: {
+
+            fnInfo: function () {
+                let self = this;
+                let nparmap = {boardNo : self.boardNo};
+                $.ajax({
+                    // 서버호출
+                    url: "http://localhost:3000/view",  // 서버 주소 수정 (http:// 포함)
+                    dataType: "json",
+                    type: "POST", // GET, POST
+                    data: JSON.stringify(nparmap),   // 서버로 보낼 데이터
+                    contentType: "application/json",
+                    success: function (data) {
+                        console.log(data.info);
+                        // {BOARDNO: 8, TITLE: '신고게시판 2', USERNAME: '이준호', …}
+                        self.info = data.info;
+                    }
+                });
+            },
+
+            fnRemove:function(boardNo){
+                // 삭제 함수
+                let self = this;
+                let nparmap = {boardNo:boardNo};
+                if(!confirm("정말 삭제하시겠습니까?")){
+                    return;
+                }
+                $.ajax({
+                    // 서버호출
+                    url: "http://localhost:3000/remove",  // 서버 주소 수정 (http:// 포함)
+                    // remove로 변경해주기
+                    dataType: "json",
+                    type: "POST", // GET, POST
+                    data: JSON.stringify(nparmap),   // 서버로 보낼 데이터
+                    contentType: "application/json",
+                    success: function(data) {
+                        alert("삭제되었습니다.")
+                        console.log(data);
+                        // histor > 저장된 db를 되돌려준다 여기선 사용안함
+                        location.href = "board-list.html";
+                        // 삭제 후 메인으로 돌아감
+                    }
+                });
+            },
+            fnBackList:function(){
+                location.href = "board-list.html";
+            }
+        },
+        mounted() {
+            // 처음 시작할 때 실행되는 부분
+            const queryParams = new URLSearchParams(window.location.search);
+            this.boardNo = queryParams.get('boardNo');
+            // url 형식을 param의 형태로 가져오기 위한 코드
+            // ex) 전송받은 url >> "board-view.html?boardNo=1"
+            // url의 ? 뒷부분 boardNo=1 가 전송받은 값
+            // 위에서 선언한 boardNo(this.boardNo)는 
+            // queryParams.get('boardNo'); >> boardNo = 1 >> 1
+            // this.boardNo = 1 || 아래 콘솔 로그에서도 1로 출력됨
+            console.log("boardNo ==> "+this.boardNo);
+            this.fnInfo();
+        }
+    });
+
+    app.mount('#app');
+</script>
