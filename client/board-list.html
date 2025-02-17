@@ -18,6 +18,9 @@
             background-color: aliceblue;
             /* font-size: 30px; */
         }
+        a {
+            text-decoration: none;
+        }
     </style>
 </head>
 <body>
@@ -38,7 +41,12 @@
                         {{item.TITLE}}
                     </a>
                 </td>
-                <td>{{item.USERNAME}}</td>
+                
+                <td>
+                    <a href="javascript:;" @click="fnUser(item.USERID)">
+                        {{item.USERNAME}}
+                    </a>
+                </td>
                 <td>{{item.CNT}}</td>
                 <td>{{item.CDATETIME}}</td>
                 <td><button @click="fnRemove(item.BOARDNO)">삭제</button></td>
@@ -102,12 +110,17 @@
 
             fnView:function(boardNo){
                 location.href = "board-view.html?boardNo="+boardNo;
-                // 이동+값전송 / & > 여러개 보낼때 ',' 와 같음
+                // ? boardNo = " + boardNo ;
+                // 이동+값전송(key+value) / & > 여러개 보낼때 ',' 와 같음
                 // 함수 실행 시 boardNo를 받아와서 '클릭 된 번호'를 전송
             },
 
             fnInsert:function(){
                 location.href = "board-insert.html";
+            },
+
+            fnUser:function(userId){
+                location.href = "user-view.html?userId="+userId;
             }
         },
         mounted() {

@@ -37,7 +37,7 @@
             height: 300px;
         }
         button{
-            margin-top: 5px;
+            margin-top: 10px;
             margin-right: 5px;
         }
     </style>
@@ -70,6 +70,7 @@
             </table>
             <div>
                 <button @click="fnRemove(info.BOARDNO)">삭제</button>
+                <button @click="fnEdit()">수정</button>
                 <button @click="fnBackList">되돌아가기</button>
             </div>
         </div>
@@ -130,8 +131,16 @@
                     }
                 });
             },
+
             fnBackList:function(){
                 location.href = "board-list.html";
+            },
+
+            fnEdit:function(){
+                // self.boardNo 가 이미 선언되어 있음.
+                // 파라메터 받을 필요 없음.
+                let self = this;
+                location.href = "board-edit.html?boardNo="+self.boardNo;
             }
         },
         mounted() {

@@ -51,18 +51,18 @@
             <table>
                 <tr>
                     <th>제목</th>
-                    <td><input id="title" v-model="title"></td>
+                    <td><input id="title" v-model="info.TITLE"></td>
                 </tr>
                 <tr>
                     <th>내용</th>
                     <td id="contents">
-                        <textarea v-model="contents" rows="20" cols="70"></textarea>
+                        <textarea v-model="info.CONTENTS" rows="20" cols="70"></textarea>
                     </td>
                 </tr>
             </table>
             <div>
-                <button @click="fnSave">저장</button>
-                <button @click="fnBackList">되돌아가기</button>
+                <button @click="fnEdit()">저장</button>
+                <button @click="fnBackView(info.BOARDNO)">되돌아가기</button>
             </div>
         </div>
     </div>
@@ -74,43 +74,62 @@
         data() {
             return {
                 // 변수
-                title:"",
-                contents:"",
-                userId:"user01"
-                // 나중에 로그인 정보를 담아서 작성자 넣어주게됨.
-                // 지금은 하드코딩
+                info:{},
+                boardNo:""
             };
         },
         methods: {
             // 함수(메소드)
-            fnSave : function(){
+            fnInfo: function () {
                 let self = this;
-                let nparmap={
-                    title : self.title,
-                    contents : self.contents,
-                    userId : self.userId,
-                    kind : 1
-                    // 게시판 종류. 아직 관리되지 않음. 하드코딩함.
-                };
+                let nparmap = {boardNo : self.boardNo};
                 $.ajax({
-                    url: "http://localhost:3000/insert",  // 서버 주소 수정 (http:// 포함)
+                    // 서버호출
+                    url: "http://localhost:3000/board/info",  // 서버 주소 수정 (http:// 포함)
+                    dataType: "json",
+                    type: "POST", // GET, POST
+                    data: JSON.stringify(nparmap),   // 서버로 보낼 데이터
+                    contentType: "application/json",
+                    success: function (data) {
+                        console.log(data.info);
+                        self.info = data.info;
+                    }
+                });
+            },
+
+            fnEdit:function(title,contents,boardNo){
+                let self = this;
+                let nparmap = self.info;
+                // let nparmap = {title : self.info.TITLE, ...};
+                console.log(self.info);
+                // 대문자로 들어가있음. 서버에서 꺼낼때 대문자 사용해야함.
+                $.ajax({
+                    url: "http://localhost:3000/edit",  // 서버 주소 수정 (http:// 포함)
                     dataType: "json",
                     type: "POST", // GET, POST
                     data: JSON.stringify(nparmap),   // 서버로 보낼 데이터
                     contentType: "application/json",
                     success : function(data){
                         console.log(data);
-                        alert("작성되었습니다.");
-                        location.href = "board-list.html";
+                        if(data.msg == "success"){
+                            alert("수정되었습니다.");
+                            location.href = "board-list.html";
+                        }
                     }
                 });
             },
-            fnBackList:function(){
-                location.href = "board-list.html";
+
+            fnBackView:function(boardNo){
+                location.href = "board-view.html?boardNo="+boardNo;
             }
+            
         },
         mounted() {
             // 처음 시작할 때 실행되는 부분
+            const queryParams = new URLSearchParams(window.location.search);
+            this.boardNo = queryParams.get('boardNo');
+            console.log("boardNo ==> "+this.boardNo);
+            this.fnInfo();
         }
     });
 
