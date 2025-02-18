@@ -104,7 +104,10 @@
                 <td><button @click="fnRemove(item.BOARDNO)">삭제</button></td>
             </tr>
         </table>
-        <div class="center txt">
+        <div class="center" style="margin-top: 5px;">
+            <button @click="fnInsert">글쓰기</button>
+        </div>
+        <div class="txt">
             <a v-if="page != 1" id="index" href="javascript:;" class="color-black" @click="fnPageMove('prev')"> < </a>
             <a id="index" href="javascript:;" v-for="num in index" @click="fnPage(num)">
                 <span v-if="page==num" class="bgcolor color-blue">
@@ -115,9 +118,6 @@
                 </span>
             </a>
             <a v-if="page != index" id="index" href="javascript:;" class="color-black"> > </a>
-        </div>
-        <div class="center" style="margin-top: 5px;">
-            <button @click="fnInsert">글쓰기</button>
         </div>
     </div>
 </body>
