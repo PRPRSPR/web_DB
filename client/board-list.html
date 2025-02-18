@@ -7,6 +7,13 @@
     <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
+        .center {
+            width: 600px;
+            margin: 0 auto;
+        }
+        .txt{
+            text-align: center;
+        }
         table, tr, th, td {
             text-align: center;
             border : 2px solid #bbb;
@@ -24,11 +31,28 @@
         .margin {
             margin: 5px;
         }
+        #index{
+            margin-right: 5px;
+            text-decoration: none;
+        }
+        .bgcolor{
+            background-color: #bbb;
+        }
+        .color-blue{
+            color: blue;
+        }
+        .color-black{
+            color: black;
+        }
+        .ps{
+            float: right;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
     <div id="app">
-        <div>
+        <div class="center">
             <select class="margin" v-model="kind">
                 <option value="all">::전체::</option>
                 <option value="title">제목</option>
@@ -36,8 +60,14 @@
             </select>
             <input v-model="keyword" @keyup.enter="fnList()">
             <button class="margin" @click="fnList()">검색</button>
+            <select class="ps" v-model="pageSize" @change="fnList">
+                <option value="5">5개씩</option>
+                <option value="10">10개씩</option>
+                <option value="15">15개씩</option>
+                <option value="20">20개씩</option>
+            </select>
         </div>
-        <table>
+        <table class="center">
             <tr>
                 <th>
                     <a href="javascript:;" @click="fnOrder('BOARDNO')">번호</a>
@@ -74,7 +104,19 @@
                 <td><button @click="fnRemove(item.BOARDNO)">삭제</button></td>
             </tr>
         </table>
-        <div style="margin-top: 5px;">
+        <div class="center txt">
+            <a v-if="page != 1" id="index" href="javascript:;" class="color-black" @click="fnPageMove('prev')"> < </a>
+            <a id="index" href="javascript:;" v-for="num in index" @click="fnPage(num)">
+                <span v-if="page==num" class="bgcolor color-blue">
+                    {{num}}
+                </span>
+                <span v-else class="color-black" @click="fnPageMove('next')">
+                    {{num}}
+                </span>
+            </a>
+            <a v-if="page != index" id="index" href="javascript:;" class="color-black"> > </a>
+        </div>
+        <div class="center" style="margin-top: 5px;">
             <button @click="fnInsert">글쓰기</button>
         </div>
     </div>
@@ -88,7 +130,12 @@
                 list : [],
                 keyword:"",
                 kind:"all",
-                orderKey:""
+                orderKey:"",
+                orderType:"",
+                index: 0,
+                pageSize: 5,
+                // 변경 가능하게 해둠. 확장성.
+                page: 1
             };
         },
         methods: {
@@ -97,7 +144,10 @@
                 let nparmap = {
                     keyword:self.keyword,
                     kind:self.kind,
-                    orderKey:self.orderKey
+                    orderKey:self.orderKey,
+                    orderType:self.orderType,
+                    pageSize:self.pageSize,
+                    page:(self.page-1)*self.pageSize
                 };
                 $.ajax({
                     // 서버호출
@@ -108,7 +158,11 @@
                     contentType: "application/json",
                     success: function(data) {
                         console.log(data);
+                        // list: result.rows 와 count:count.rows[0].BOARDCNT 가 담겨있음
                         self.list = data.list;
+                        // self.index = Math.ceil(data.count / 5);
+                        // data.count / 5 > 전체 게시글 갯수 나누기 5 || 5 >> pageSize 페이지 당 게시글 수
+                        self.index = Math.ceil(data.count / self.pageSize);
                     }
                 });
             },
@@ -149,14 +203,33 @@
             },
 
             fnUser:function(userId){
-                location.href = "user-view.html?userId="+userId;
+                location.href = "user-view.html?userId="+userId; 
             },
             fnOrder:function(orderKey){
                 let self = this;
+                if (self.orderKey != orderKey){
+                    self.orderType = "";
+                }
                 self.orderKey = orderKey;
+                self.orderType = self.orderType == "ASC" ? "DESC" : "ASC" ;
                 console.log(orderKey);
                 self.fnList();
 
+            },
+            fnPage:function(num){
+                let self = this;
+                self.page = num;
+                // 내가 클릭한 num
+                self.fnList();
+            },
+            fnPageMove:function(direction){
+                let self = this;
+                if(direction == "next"){
+                    self.page++;
+                } else {
+                    self.page--;
+                }
+                self.fnList();
             }
         },
         mounted() {

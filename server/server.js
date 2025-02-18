@@ -82,11 +82,11 @@ app.post('/login', async (req, res) => {
 
 app.post('/list', async (req, res) => {
   // list 주소
-  const {kind,keyword,orderKey} = req.body;  // 클라이언트에서 보낸 데이터
+  const {kind,keyword,orderKey,orderType,pageSize,page} = req.body;  // 클라이언트에서 보낸 데이터
   try {
     const connection = await connectToDB();
     if (connection) {
-      let search = "";
+      let search = ""; 
       if(kind == "all"){
         search = `WHERE TITLE LIKE '%${keyword}%' OR USERNAME LIKE '%${keyword}%'`;
       } else if(kind == "title") {
@@ -94,23 +94,35 @@ app.post('/list', async (req, res) => {
       } else {
         search = `WHERE USERNAME LIKE '%${keyword}%'`;
       };
+
       let order = "";
+
       if(orderKey!=""){
-        order = ` ORDER BY ${orderKey} ASC`
+        order = ` ORDER BY ${orderKey} ${orderType}`;
       };
+      // 페이징 작업을 위한 복사 시작점
       const result = await connection.execute(
         `SELECT 
           BOARDNO, TITLE, USERNAME, B.USERID, CNT, TO_CHAR(B.CDATETIME, 'YYYY-MM-DD') AS CDATETIME
           FROM BOARD B
-          INNER JOIN MEMBER M ON B.USERID=M.USERID ` + search + order,
+          INNER JOIN MEMBER M ON B.USERID=M.USERID ` + search + order 
+          + ` OFFSET :page ROWS FETCH NEXT :pageSize ROWS ONLY`,
         // search가 문자열이기 때문에 join문 뒤에 띄어쓰기 해줘야함
         // ; 붙이지 않도록 주의 / TO_CHAR(B.CDATETIME, 'YYYY-MM-DD') 같은 경우 별칭주기
         // [keyword], // %:keyword% >> %사이 값을 인식하지 못함.
         // '%' + keyword + '%' 형태가 되도록
+        {pageSize,page},
+        { outFormat: oracledb.OUT_FORMAT_OBJECT }
+      );
+      // 아래부터 페이징 작업
+      const count = await connection.execute(
+        `SELECT COUNT(*) AS BOARDCNT 
+        FROM BOARD B
+        INNER JOIN MEMBER M ON B.USERID=M.USERID`,
         {},
         { outFormat: oracledb.OUT_FORMAT_OBJECT }
       );
-      res.send({ msg: 'success', list: result.rows });
+      res.send({ msg: 'success', list: result.rows, count:count.rows[0].BOARDCNT });
       await connection.close();
     } else {
       res.status(500).send({ msg: 'DB 연결 실패' });
