@@ -113,11 +113,11 @@
                 <span v-if="page==num" class="bgcolor color-blue">
                     {{num}}
                 </span>
-                <span v-else class="color-black" @click="fnPageMove('next')">
+                <span v-else class="color-black">
                     {{num}}
                 </span>
             </a>
-            <a v-if="page != index" id="index" href="javascript:;" class="color-black"> > </a>
+            <a v-if="page != index" id="index" href="javascript:;" class="color-black" @click="fnPageMove('next')"> > </a>
         </div>
     </div>
 </body>
