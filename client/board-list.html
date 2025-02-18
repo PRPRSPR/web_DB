@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>연습!!!!!!!!</title>
+    <title>게시판</title>
     <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
@@ -21,21 +21,43 @@
         a {
             text-decoration: none;
         }
+        .margin {
+            margin: 5px;
+        }
     </style>
 </head>
 <body>
     <div id="app">
+        <div>
+            <select class="margin" v-model="kind">
+                <option value="all">::전체::</option>
+                <option value="title">제목</option>
+                <option value="name">작성자</option>
+            </select>
+            <input v-model="keyword" @keyup.enter="fnList()">
+            <button class="margin" @click="fnList()">검색</button>
+        </div>
         <table>
             <tr>
-                <th>번호</th>
-                <th>제목</th>
-                <th>작성자</th>
-                <th>조회수</th>
-                <th>작성일</th>
+                <th>
+                    <a href="javascript:;" @click="fnOrder('BOARDNO')">번호</a>
+                </th>
+                <th>
+                    <a href="javascript:;" @click="fnOrder('TITLE')">제목</a>
+                </th>
+                <th>
+                    <a href="javascript:;" @click="fnOrder('NAME')">작성자</a>
+                </th>
+                <th>
+                    <a href="javascript:;" @click="fnOrder('CNT')">조회수</a>
+                </th>
+                <th>
+                    <a href="javascript:;" @click="fnOrder('CDATETIME')">작성일</a>
+                </th>
                 <th>삭제</th>
             </tr>
             <tr v-for="item in list">
-                <td>{{item.BOARDNO}}</td>
+                <tD>{{item.BOARDNO}}</td>
                 <td>
                     <a href="javascript:;" @click="fnView(item.BOARDNO, item.CNT)">
                         {{item.TITLE}}
@@ -63,13 +85,20 @@
     const app = Vue.createApp({
         data() {
             return {
-                list : [] 
+                list : [],
+                keyword:"",
+                kind:"all",
+                orderKey:""
             };
         },
         methods: {
             fnList: function() { 
                 let self = this;
-                let nparmap = {};
+                let nparmap = {
+                    keyword:self.keyword,
+                    kind:self.kind,
+                    orderKey:self.orderKey
+                };
                 $.ajax({
                     // 서버호출
                     url: "http://localhost:3000/list",  // 서버 주소 수정 (http:// 포함)
@@ -121,6 +150,13 @@
 
             fnUser:function(userId){
                 location.href = "user-view.html?userId="+userId;
+            },
+            fnOrder:function(orderKey){
+                let self = this;
+                self.orderKey = orderKey;
+                console.log(orderKey);
+                self.fnList();
+
             }
         },
         mounted() {

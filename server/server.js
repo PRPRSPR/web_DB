@@ -34,7 +34,8 @@ app.get('/', function (req, res) {
 });
 
 // package삭제하지 말 것
-// npm i로 node_modules 설치
+// cd server > 서버 폴더로 이동
+// npm i로 node_modules 설치 (설치된 경우 스킵)
 // nodemon server.js 로 서버 실행
 
 // 로그인 API
@@ -81,17 +82,32 @@ app.post('/login', async (req, res) => {
 
 app.post('/list', async (req, res) => {
   // list 주소
-  const { } = req.body;  // 클라이언트에서 보낸 데이터
+  const {kind,keyword,orderKey} = req.body;  // 클라이언트에서 보낸 데이터
   try {
     const connection = await connectToDB();
     if (connection) {
+      let search = "";
+      if(kind == "all"){
+        search = `WHERE TITLE LIKE '%${keyword}%' OR USERNAME LIKE '%${keyword}%'`;
+      } else if(kind == "title") {
+        search = `WHERE TITLE LIKE '%${keyword}%'`;
+      } else {
+        search = `WHERE USERNAME LIKE '%${keyword}%'`;
+      };
+      let order = "";
+      if(orderKey!=""){
+        order = ` ORDER BY ${orderKey} ASC`
+      };
       const result = await connection.execute(
         `SELECT 
           BOARDNO, TITLE, USERNAME, B.USERID, CNT, TO_CHAR(B.CDATETIME, 'YYYY-MM-DD') AS CDATETIME
           FROM BOARD B
-          INNER JOIN MEMBER M ON B.USERID=M.USERID`,
+          INNER JOIN MEMBER M ON B.USERID=M.USERID ` + search + order,
+        // search가 문자열이기 때문에 join문 뒤에 띄어쓰기 해줘야함
         // ; 붙이지 않도록 주의 / TO_CHAR(B.CDATETIME, 'YYYY-MM-DD') 같은 경우 별칭주기
-        [],
+        // [keyword], // %:keyword% >> %사이 값을 인식하지 못함.
+        // '%' + keyword + '%' 형태가 되도록
+        {},
         { outFormat: oracledb.OUT_FORMAT_OBJECT }
       );
       res.send({ msg: 'success', list: result.rows });
@@ -277,6 +293,38 @@ app.post('/edit', async (req, res) => {
               UDATETIME = SYSDATE
           WHERE BOARDNO = :BOARDNO`,
         [TITLE, CONTENTS, BOARDNO],
+        { outFormat: oracledb.OUT_FORMAT_OBJECT }
+      );
+
+      await connection.commit();
+      res.send({ msg: 'success' });
+      await connection.close();
+    } else {
+      res.status(500).send({ msg: 'DB 연결 실패' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ msg: '작성 중 오류가 발생했습니다.' });
+  }
+});
+
+app.post('/user/edit', async (req, res) => {
+  // pk값 필요
+  console.log("req.body == > ", req.body);
+  const { USERNAME,EMAIL,PHONE,GENDER,USERID } = req.body;  // 클라이언트에서 보낸 데이터
+  // self.user를 보냈기 때문에 대문자로 꺼내야 함
+  try {
+    const connection = await connectToDB();
+    if (connection) {
+      const result = await connection.execute(
+        `UPDATE MEMBER
+          SET
+              USERNAME = :USERNAME,
+              EMAIL = :EMAIL,
+              PHONE = :PHONE,
+              GENDER = :GENDER
+          WHERE USERID = :USERID`,
+        [USERNAME,EMAIL,PHONE,GENDER,USERID],
         { outFormat: oracledb.OUT_FORMAT_OBJECT }
       );
 
