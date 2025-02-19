@@ -199,9 +199,7 @@ app.post('/view', async (req, res) => {
         `SELECT *
         FROM BOARD_COMMENT
         WHERE BOARDNO = :boardNo`,
-        // CONTENTS 와 WHERE BOARDNO = :boardNo 추가
         [boardNo],
-        // WHERE BOARDNO = :boardNo >> :boardNo =>> [boardNo],
         { outFormat: oracledb.OUT_FORMAT_OBJECT }
       );
       // res.send({ msg: 'success', list : result.rows });
@@ -310,9 +308,9 @@ app.post('/comment/save', async (req, res) => {
     const connection = await connectToDB();
     if (connection) {
       const result = await connection.execute(
-        `INSERT INTO BOARD_COMMENT
+        `INSERT INTO BOARD_COMMENT 
           VALUES (COMMENT_SEQ.NEXTVAL, :boardNo, 'user01', :\"comment\", 1, SYSDATE, SYSDATE)`,
-        [comment,boardNo],
+        [boardNo,comment],
         { outFormat: oracledb.OUT_FORMAT_OBJECT }
       );
 

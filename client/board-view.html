@@ -75,19 +75,8 @@
                     <td id="contents">{{info.CONTENTS}}</td>
                 </tr>
             </table>
-            <div>
-                <table class="margin">
-                    <tr>
-                        <th>댓글입력</th>
-                        <td>
-                            <textarea v-model="comment" cols="55" rows="5"></textarea>
-                            <button class="button2" @click="fnCommentSave()">저장</button>
-                        </td>
-                    </tr>
-                </table>
-            </div>
             <div class="margin">
-                <table>
+                <table id="comment-table">
                     <tr>
                         <th>작성자</th>
                         <th>댓글 내용</th>
@@ -95,6 +84,17 @@
                     <tr v-for="item in commentList">
                         <th>{{item.USERID}}</th>
                         <td>{{item.CONTENTS}}</td>
+                    </tr>
+                </table>
+            </div>
+            <div>
+                <table class="margin">
+                    <tr>
+                        <th>댓글입력</th>
+                        <td>
+                            <textarea v-model="comment" cols="50" rows="5"></textarea>
+                            <button class="button2" @click="fnCommentSave()">저장</button>
+                        </td>
                     </tr>
                 </table>
             </div>
@@ -170,7 +170,7 @@
             },
 
             fnEdit:function(){
-                // self.boardNo 가 이미 선언되어 있음.
+                // boardNo 가 이미 선언되어 있음. > self.boardNo
                 // 파라메터 받을 필요 없음.
                 let self = this;
                 location.href = "board-edit.html?boardNo="+self.boardNo;
