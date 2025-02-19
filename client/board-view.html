@@ -24,6 +24,7 @@
         }
 
         th {
+            width: 100px;
             color: rgb(132, 39, 219);
             background-color: aliceblue;
             /* font-size: 30px; */
@@ -36,9 +37,15 @@
         #contents{
             height: 300px;
         }
-        button{
+        .button {
             margin-top: 10px;
             margin-right: 5px;
+        }
+        .button2 {
+            margin-left: 10px;
+        }
+        .margin {
+            margin-bottom: 5px;
         }
     </style>
 </head>
@@ -46,7 +53,7 @@
 <body>
     <div id="app">
         <div id="container">
-            <table>
+            <table class="margin">
                 <tr>
                     <th>제목</th>
                     <td>{{info.TITLE}}</td>
@@ -69,9 +76,32 @@
                 </tr>
             </table>
             <div>
-                <button @click="fnRemove(info.BOARDNO)">삭제</button>
-                <button @click="fnEdit()">수정</button>
-                <button @click="fnBackList">되돌아가기</button>
+                <table class="margin">
+                    <tr>
+                        <th>댓글입력</th>
+                        <td>
+                            <textarea v-model="comment" cols="55" rows="5"></textarea>
+                            <button class="button2" @click="fnCommentSave()">저장</button>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="margin">
+                <table>
+                    <tr>
+                        <th>작성자</th>
+                        <th>댓글 내용</th>
+                    </tr>
+                    <tr v-for="item in commentList">
+                        <th>{{item.USERID}}</th>
+                        <td>{{item.CONTENTS}}</td>
+                    </tr>
+                </table>
+            </div>
+            <div>
+                <button class="button" @click="fnRemove(info.BOARDNO)">삭제</button>
+                <button class="button" @click="fnEdit()">수정</button>
+                <button class="button" @click="fnBackList">되돌아가기</button>
             </div>
         </div>
     </div>
@@ -84,7 +114,9 @@
         data() {
             return {
                 info: {},
-                boardNo: ""
+                commentList:[],
+                boardNo: "",
+                comment: ""
             };
         },
         methods: {
@@ -103,6 +135,7 @@
                         console.log(data.info);
                         // {BOARDNO: 8, TITLE: '신고게시판 2', USERNAME: '이준호', …}
                         self.info = data.info;
+                        self.commentList = data.commentList;
                     }
                 });
             },
@@ -141,6 +174,29 @@
                 // 파라메터 받을 필요 없음.
                 let self = this;
                 location.href = "board-edit.html?boardNo="+self.boardNo;
+            },
+            fnCommentSave:function(){
+                let self = this;
+                let nparmap = {
+                    comment:self.comment,
+                    boardNo:self.boardNo
+                };
+                $.ajax({
+                    // 서버호출
+                    url: "http://localhost:3000/comment/save",  // 서버 주소 수정 (http:// 포함)
+                    dataType: "json",
+                    type: "POST", // GET, POST
+                    data: JSON.stringify(nparmap),   // 서버로 보낼 데이터
+                    contentType: "application/json",
+                    success: function (data) {
+                        if(data.msg == "success"){
+                            alert("등록이 등록되었습니다.");
+                            self.fnInfo();
+                        } else {
+                            alert("오류발생");
+                        }
+                    }
+                });
             }
         },
         mounted() {

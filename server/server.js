@@ -102,10 +102,14 @@ app.post('/list', async (req, res) => {
       };
       // 페이징 작업을 위한 복사 시작점
       const result = await connection.execute(
-        `SELECT 
-          BOARDNO, TITLE, USERNAME, B.USERID, CNT, TO_CHAR(B.CDATETIME, 'YYYY-MM-DD') AS CDATETIME
-          FROM BOARD B
-          INNER JOIN MEMBER M ON B.USERID=M.USERID ` + search + order 
+        `SELECT B.BOARDNO, TITLE, USERNAME, B.USERID, CNT, TO_CHAR(B.CDATETIME, 'YYYY-MM-DD') AS CDATETIME, NVL(BCCNT,0) AS BCCNT
+        FROM BOARD B
+        INNER JOIN MEMBER M ON B.USERID=M.USERID
+        LEFT JOIN (
+            SELECT COUNT(*) AS BCCNT, BOARDNO
+            FROM BOARD_COMMENT
+            GROUP BY BOARDNO
+        ) T ON B.BOARDNO=T.BOARDNO ` + search + order 
           + ` OFFSET :page ROWS FETCH NEXT :pageSize ROWS ONLY`,
         // search가 문자열이기 때문에 join문 뒤에 띄어쓰기 해줘야함
         // ; 붙이지 않도록 주의 / TO_CHAR(B.CDATETIME, 'YYYY-MM-DD') 같은 경우 별칭주기
@@ -169,8 +173,8 @@ app.post('/view', async (req, res) => {
         // 아래 const result = await connection.execute( 에서
         // await connection.execute() 함수 실행 부분 복사
         `UPDATE BOARD
-          SET CNT = CNT+1
-          WHERE BOARDNO = :boardNo`,
+        SET CNT = CNT+1
+        WHERE BOARDNO = :boardNo`,
         // 조회수(CNT) 증가 쿼리 작성
         [boardNo],
         { outFormat: oracledb.OUT_FORMAT_OBJECT }
@@ -182,17 +186,26 @@ app.post('/view', async (req, res) => {
       // 아래부터 info 조회
       const result = await connection.execute(
         `SELECT 
-          BOARDNO, TITLE, USERNAME, CONTENTS, CNT, TO_CHAR(B.CDATETIME, 'YYYY-MM-DD') AS CDATETIME, TO_CHAR(B.UDATETIME, 'YYYY-MM-DD') AS UDATETIME
-          FROM BOARD B
-          INNER JOIN MEMBER M ON B.USERID=M.USERID
-          WHERE BOARDNO = :boardNo`,
+        BOARDNO, TITLE, USERNAME, CONTENTS, CNT, TO_CHAR(B.CDATETIME, 'YYYY-MM-DD') AS CDATETIME, TO_CHAR(B.UDATETIME, 'YYYY-MM-DD') AS UDATETIME
+        FROM BOARD B
+        INNER JOIN MEMBER M ON B.USERID=M.USERID
+        WHERE BOARDNO = :boardNo`,
+        // CONTENTS 와 WHERE BOARDNO = :boardNo 추가
+        [boardNo],
+        // WHERE BOARDNO = :boardNo >> :boardNo =>> [boardNo],
+        { outFormat: oracledb.OUT_FORMAT_OBJECT }
+      );
+      const comment = await connection.execute(
+        `SELECT *
+        FROM BOARD_COMMENT
+        WHERE BOARDNO = :boardNo`,
         // CONTENTS 와 WHERE BOARDNO = :boardNo 추가
         [boardNo],
         // WHERE BOARDNO = :boardNo >> :boardNo =>> [boardNo],
         { outFormat: oracledb.OUT_FORMAT_OBJECT }
       );
       // res.send({ msg: 'success', list : result.rows });
-      res.send({ msg: 'success', info: result.rows[0] });
+      res.send({ msg: 'success', info: result.rows[0], commentList:comment.rows });
       // 상세페이지에서는 boardNo 값 하나만 존재. list가 아니어도 됨.
       // rows[0] > 1개의 데이터
       await connection.close();
@@ -274,6 +287,32 @@ app.post('/insert', async (req, res) => {
         `INSERT INTO BOARD
           VALUES (BOARD_SEQ.NEXTVAL, :title, :contents, :userId, :kind, 0,0,1, 'N', SYSDATE, SYSDATE)`,
         [title, contents, userId, kind],
+        { outFormat: oracledb.OUT_FORMAT_OBJECT }
+      );
+
+      await connection.commit();
+      res.send({ msg: 'success' });
+      await connection.close();
+    } else {
+      res.status(500).send({ msg: 'DB 연결 실패' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ msg: '작성 중 오류가 발생했습니다.' });
+  }
+});
+
+app.post('/comment/save', async (req, res) => {
+  // pk값 필요
+  console.log("req.body == > ", req.body);
+  const { comment,boardNo } = req.body;  // 클라이언트에서 보낸 데이터
+  try {
+    const connection = await connectToDB();
+    if (connection) {
+      const result = await connection.execute(
+        `INSERT INTO BOARD_COMMENT
+          VALUES (COMMENT_SEQ.NEXTVAL, :boardNo, 'user01', :\"comment\", 1, SYSDATE, SYSDATE)`,
+        [comment,boardNo],
         { outFormat: oracledb.OUT_FORMAT_OBJECT }
       );
 
@@ -407,6 +446,31 @@ app.post('/prof/remove', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).send({ msg: '삭제 중 오류가 발생했습니다.' });
+  }
+});
+
+app.post('/emp/list', async (req, res) => {
+  // list 주소
+  const {} = req.body;  // 클라이언트에서 보낸 데이터
+  try {
+    const connection = await connectToDB();
+    if (connection) {
+      const result = await connection.execute(
+        `SELECT SUM(SAL) AS SAL, DNAME
+          FROM EMP E
+          INNER JOIN DEPT D ON E.DEPTNO=D.DEPTNO
+          GROUP BY DNAME`,
+        [],
+        { outFormat: oracledb.OUT_FORMAT_OBJECT }
+      );
+      res.send({ msg: 'success', list: result.rows });
+      await connection.close();
+    } else {
+      res.status(500).send({ msg: 'DB 연결 실패' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ msg: '조회 중 오류가 발생했습니다.' });
   }
 });
 

@@ -90,10 +90,17 @@
                 <td>{{item.BOARDNO}}</td>
                 <td>
                     <a href="javascript:;" @click="fnView(item.BOARDNO, item.CNT)">
-                        {{item.TITLE}}
+                        {{item.TITLE}} 
+                        <span v-if="item.BCCNT!=0">
+                             ({{item.BCCNT}})
+                        </span>
+                        <!-- <template v-if="item.BCCNT!=0">
+                             ({{item.BCCNT}})
+                        </template> -->
+                        <!-- 아무 기능 없는 태그 제공. 스타일 적용 안됨.  -->
+                         <!-- 익스플로러에서 오류 생길 수 있음 -->
                     </a>
                 </td>
-                
                 <td>
                     <a href="javascript:;" @click="fnUser(item.USERID)">
                         {{item.USERNAME}}
