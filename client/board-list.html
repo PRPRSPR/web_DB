@@ -76,7 +76,7 @@
                     <a href="javascript:;" @click="fnOrder('TITLE')">제목</a>
                 </th>
                 <th>
-                    <a href="javascript:;" @click="fnOrder('NAME')">작성자</a>
+                    <a href="javascript:;" @click="fnOrder('USERNAME')">작성자</a>
                 </th>
                 <th>
                     <a href="javascript:;" @click="fnOrder('CNT')">조회수</a>
@@ -87,7 +87,7 @@
                 <th>삭제</th>
             </tr>
             <tr v-for="item in list">
-                <tD>{{item.BOARDNO}}</td>
+                <td>{{item.BOARDNO}}</td>
                 <td>
                     <a href="javascript:;" @click="fnView(item.BOARDNO, item.CNT)">
                         {{item.TITLE}}

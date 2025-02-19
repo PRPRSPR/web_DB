@@ -352,6 +352,64 @@ app.post('/user/edit', async (req, res) => {
   }
 });
 
+app.post('/prof/list', async (req, res) => {
+  // list 주소
+  const {} = req.body;  // 클라이언트에서 보낸 데이터
+  try {
+    const connection = await connectToDB();
+    if (connection) {
+      const result = await connection.execute(
+        `SELECT PROFNO, NAME, POSITION, PAY, TO_CHAR(HIREDATE, 'YYYY-MM-DD') AS HIREDATE, DNAME
+          FROM PROFESSOR P
+          INNER JOIN DEPARTMENT D ON P.DEPTNO=D.DEPTNO`,
+        [],
+        { outFormat: oracledb.OUT_FORMAT_OBJECT }
+      );
+      res.send({ msg: 'success', list: result.rows });
+      await connection.close();
+    } else {
+      res.status(500).send({ msg: 'DB 연결 실패' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ msg: '조회 중 오류가 발생했습니다.' });
+  }
+});
+
+app.post('/prof/remove', async (req, res) => {
+  // pk값 필요
+  console.log("req.body == > ", req.body);
+  const { list } = req.body;  // 클라이언트에서 보낸 데이터
+  try {
+    const connection = await connectToDB();
+    if (connection) {
+      let deleteTxt = "WHERE PROFNO IN (";
+      // WHERE PROFNO IN ()
+      for(let i=0; i<list.length; i++){
+        deleteTxt += list[i]; 
+        if(list.length-1 != i){
+          deleteTxt += ",";
+        }
+      }
+      deleteTxt += ")";0
+      const result = await connection.execute(
+        `DELETE FROM PROFESSOR ` + deleteTxt,
+        [],
+        { outFormat: oracledb.OUT_FORMAT_OBJECT }
+      );
+
+      await connection.commit();
+      res.send({ msg: 'success' });
+      await connection.close();
+    } else {
+      res.status(500).send({ msg: 'DB 연결 실패' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ msg: '삭제 중 오류가 발생했습니다.' });
+  }
+});
+
 app.listen(3000, () => {
   console.log('서버가 3000 포트에서 실행 중입니다.');
 });
