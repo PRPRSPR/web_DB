@@ -9,10 +9,11 @@
         integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
-        #container{
+        #container {
             width: 600px;
             margin: 50px auto;
         }
+
         table,
         tr,
         th,
@@ -34,16 +35,19 @@
             width: 500px;
         }
 
-        #contents{
+        #contents {
             height: 300px;
         }
+
         .button {
             margin-top: 10px;
             margin-right: 5px;
         }
+
         .button2 {
-            margin-left: 10px;
+            margin-left: 30px;
         }
+
         .margin {
             margin-bottom: 5px;
         }
@@ -80,10 +84,27 @@
                     <tr>
                         <th>작성자</th>
                         <th>댓글 내용</th>
+                        <th></th>
                     </tr>
                     <tr v-for="item in commentList">
                         <th>{{item.USERID}}</th>
-                        <td>{{item.CONTENTS}}</td>
+                        <td>
+                            <label v-if="editCommentNo == item.COMMENTNO">
+                                <input v-model="editContents">
+                            </label>
+                            <label v-else>
+                                {{item.CONTENTS}}
+                            </label>
+                        <td style="width: 100px;">
+                            <template v-if="editCommentNo == item.COMMENTNO">
+                                <button @click="fnUpdateCMT(item.COMMENTNO)">저장</button>
+                                <button @click="fnCancelCMT()">취소</button>
+                            </template>
+                            <template v-else>
+                                <button @click="fnEditCMT(item)">수정</button>
+                                <button @click="fnRemoveCMT(item.COMMENTNO)">삭제</button>
+                            </template>
+                        </td>
                     </tr>
                 </table>
             </div>
@@ -114,16 +135,18 @@
         data() {
             return {
                 info: {},
-                commentList:[],
+                commentList: [],
                 boardNo: "",
-                comment: ""
+                comment: "",
+                editCommentNo:"",
+                editContents:""
             };
         },
         methods: {
 
             fnInfo: function () {
                 let self = this;
-                let nparmap = {boardNo : self.boardNo};
+                let nparmap = { boardNo: self.boardNo };
                 $.ajax({
                     // 서버호출
                     url: "http://localhost:3000/view",  // 서버 주소 수정 (http:// 포함)
@@ -140,11 +163,11 @@
                 });
             },
 
-            fnRemove:function(boardNo){
+            fnRemove: function (boardNo) {
                 // 삭제 함수
                 let self = this;
-                let nparmap = {boardNo:boardNo};
-                if(!confirm("정말 삭제하시겠습니까?")){
+                let nparmap = { boardNo: boardNo };
+                if (!confirm("정말 삭제하시겠습니까?")) {
                     return;
                 }
                 $.ajax({
@@ -155,8 +178,8 @@
                     type: "POST", // GET, POST
                     data: JSON.stringify(nparmap),   // 서버로 보낼 데이터
                     contentType: "application/json",
-                    success: function(data) {
-                        alert("삭제되었습니다.")
+                    success: function (data) {
+                        alert("삭제되었습니다.");
                         console.log(data);
                         // histor > 저장된 db를 되돌려준다 여기선 사용안함
                         location.href = "board-list.html";
@@ -165,21 +188,22 @@
                 });
             },
 
-            fnBackList:function(){
+            fnBackList: function () {
                 location.href = "board-list.html";
             },
 
-            fnEdit:function(){
+            fnEdit: function () {
                 // boardNo 가 이미 선언되어 있음. > self.boardNo
                 // 파라메터 받을 필요 없음.
                 let self = this;
-                location.href = "board-edit.html?boardNo="+self.boardNo;
+                location.href = "board-edit.html?boardNo=" + self.boardNo;
             },
-            fnCommentSave:function(){
+
+            fnCommentSave: function () {
                 let self = this;
                 let nparmap = {
-                    comment:self.comment,
-                    boardNo:self.boardNo
+                    comment: self.comment,
+                    boardNo: self.boardNo
                 };
                 $.ajax({
                     // 서버호출
@@ -189,8 +213,70 @@
                     data: JSON.stringify(nparmap),   // 서버로 보낼 데이터
                     contentType: "application/json",
                     success: function (data) {
-                        if(data.msg == "success"){
-                            alert("등록이 등록되었습니다.");
+                        if (data.msg == "success") {
+                            alert("등록되었습니다.");
+                            self.fnInfo();
+                        } else {
+                            alert("오류발생");
+                        }
+                    }
+                });
+
+            },
+
+            fnRemoveCMT: function (commentNo) {
+                console.log(commentNo);
+                let self = this;
+                let nparmap = { commentNo: commentNo };
+                if (!confirm("정말 삭제하시겠습니까?")) {
+                    return;
+                }
+                $.ajax({
+                    // 서버호출
+                    url: "http://localhost:3000/comment/remove",  // 서버 주소 수정 (http:// 포함)
+                    dataType: "json",
+                    type: "POST", // GET, POST
+                    data: JSON.stringify(nparmap),   // 서버로 보낼 데이터
+                    contentType: "application/json",
+                    success: function (data) {
+                        if (data.msg == "success") {
+                            alert("삭제되었습니다.");
+                            self.fnInfo();
+                        } else {
+                            alert("오류발생");
+                        }
+                    }
+                });
+            },
+
+            fnEditCMT:function(item){
+                let self = this;
+                self.editCommentNo = item.COMMENTNO;
+                self.editContents = item.CONTENTS;
+            },
+
+            fnCancelCMT:function(){
+                let self = this;
+                self.editCommentNo = "";
+            },
+
+            fnUpdateCMT:function(COMMENTNO){
+                let self = this;
+                let nparmap = {
+                    COMMENTNO: COMMENTNO,
+                    CONTENTS : self.editContents
+                }
+                $.ajax({
+                    // 서버호출
+                    url: "http://localhost:3000/comment/update",  // 서버 주소 수정 (http:// 포함)
+                    dataType: "json",
+                    type: "POST", // GET, POST
+                    data: JSON.stringify(nparmap),   // 서버로 보낼 데이터
+                    contentType: "application/json",
+                    success: function (data) {
+                        if (data.msg == "success") {
+                            alert("수정되었습니다.");
+                            self.editCommentNo = "";
                             self.fnInfo();
                         } else {
                             alert("오류발생");
@@ -209,7 +295,7 @@
             // 위에서 선언한 boardNo(this.boardNo)는 
             // queryParams.get('boardNo'); >> boardNo = 1 >> 1
             // this.boardNo = 1 || 아래 콘솔 로그에서도 1로 출력됨
-            console.log("boardNo ==> "+this.boardNo);
+            console.log("boardNo ==> " + this.boardNo);
             this.fnInfo();
         }
     });

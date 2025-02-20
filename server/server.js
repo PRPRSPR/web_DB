@@ -162,6 +162,31 @@ app.post('/remove', async (req, res) => {
   }
 });
 
+app.post('/comment/remove', async (req, res) => {
+  // pk값 필요
+  console.log("req.body == > ", req.body);
+  const { commentNo } = req.body;  // 클라이언트에서 보낸 데이터
+  try {
+    const connection = await connectToDB();
+    if (connection) {
+      const result = await connection.execute(
+        `DELETE FROM BOARD_COMMENT WHERE COMMENTNO = :commentNo`,
+        [commentNo],
+        { outFormat: oracledb.OUT_FORMAT_OBJECT }
+      );
+
+      await connection.commit();
+      res.send({ msg: 'success' });
+      await connection.close();
+    } else {
+      res.status(500).send({ msg: 'DB 연결 실패' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ msg: '삭제 중 오류가 발생했습니다.' });
+  }
+});
+
 app.post('/view', async (req, res) => {
   // list 주소
   const { boardNo } = req.body;  // 클라이언트에서 보낸 데이터
@@ -198,7 +223,8 @@ app.post('/view', async (req, res) => {
       const comment = await connection.execute(
         `SELECT *
         FROM BOARD_COMMENT
-        WHERE BOARDNO = :boardNo`,
+        WHERE BOARDNO = :boardNo
+        ORDER BY CDATETIME ASC`,
         [boardNo],
         { outFormat: oracledb.OUT_FORMAT_OBJECT }
       );
@@ -374,6 +400,36 @@ app.post('/user/edit', async (req, res) => {
               GENDER = :GENDER
           WHERE USERID = :USERID`,
         [USERNAME,EMAIL,PHONE,GENDER,USERID],
+        { outFormat: oracledb.OUT_FORMAT_OBJECT }
+      );
+
+      await connection.commit();
+      res.send({ msg: 'success' });
+      await connection.close();
+    } else {
+      res.status(500).send({ msg: 'DB 연결 실패' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ msg: '작성 중 오류가 발생했습니다.' });
+  }
+});
+
+app.post('/comment/update', async (req, res) => {
+  // pk값 필요
+  console.log("req.body == > ", req.body);
+  const { COMMENTNO, CONTENTS } = req.body;  // 클라이언트에서 보낸 데이터
+  try {
+    const connection = await connectToDB();
+    if (connection) {
+      const result = await connection.execute(
+        `UPDATE BOARD_COMMENT
+          SET
+              CONTENTS = :CONTENTS,
+              UDATETIME = SYSDATE
+          WHERE COMMENTNO = :COMMENTNO`,
+        [ CONTENTS, COMMENTNO],
+        // 순서대로 적지 않으면 오류 발생
         { outFormat: oracledb.OUT_FORMAT_OBJECT }
       );
 
